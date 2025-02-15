@@ -30,6 +30,8 @@ func main() {
 		port = "8080"
 	}
 
+	fmt.Println("Current Version: 1.0.3")
+
 	fmt.Printf("Server started on port %s\n", port)
 	http.ListenAndServe(":"+port, nil)
 }
