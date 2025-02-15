@@ -8,8 +8,8 @@ on:
 
 jobs:
   build-and-push:
-    runs-on: private-runner
-    environment: DOCKER_CREDS_PERSONAL
+    runs-on: ubuntu-latest
+    environment: playground
 
     steps:
       # 1. Check out the repository.
@@ -28,7 +28,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ vars.DOCKERHUB_USERNAME }}/your_ip
+          images: ${{ DOCKERHUB_USERNAME }}/your_ip
           # The "type=semver" option interprets the Git tag as a semantic version.
           # The pattern "{{version}}" uses the tag value as-is (e.g. "1.0.0").
           tags: |
@@ -39,8 +39,8 @@ jobs:
         id: docker_login
         uses: docker/login-action@v3
         with:
-          username: ${{ vars.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+          username: ${{ DOCKERHUB_USERNAME }}
+          password: ${{ DOCKERHUB_PASSWORD }}
 
       # 5. Build and push the Docker image.
       #    It uses your Dockerfile (ideally a multi-stage build for Golang apps)
