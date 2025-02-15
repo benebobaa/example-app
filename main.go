@@ -61,6 +61,10 @@ func handlePing(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+type IPResponse struct {
+	IPAddress string `json:"ip_address"`
+}
+
 func handleRoot(w http.ResponseWriter, r *http.Request) {
 	// Check if the X-Forwarded-For header is provided (typical with proxies)
 	clientIP := r.Header.Get("X-Forwarded-For")
@@ -74,9 +78,12 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Header().Set("Content-Type", "text/plain")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Your IP Address : " + clientIP))
+	response := IPResponse{
+		IPAddress: clientIP,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
 }
 
 func getPublicIP() (string, error) {
