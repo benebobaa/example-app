@@ -30,7 +30,9 @@ func main() {
 		port = "8080"
 	}
 
-	fmt.Println("Current Version: 1.0.3")
+	appName := os.Getenv("APP_NAME")
+
+	fmt.Println("Current Version: ", appName)
 
 	fmt.Printf("Server started on port %s\n", port)
 	http.ListenAndServe(":"+port, nil)
