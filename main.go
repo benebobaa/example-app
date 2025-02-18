@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"log"
 )
 
 var startTime time.Time
@@ -83,6 +84,8 @@ func handleRoot(w http.ResponseWriter, r *http.Request) {
 	response := IPResponse{
 		IPAddress: clientIP,
 	}
+
+	log.Println("[DEBUG] clientIp: ", clientIP)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response)
