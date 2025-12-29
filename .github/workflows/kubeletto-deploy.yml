@@ -1,12 +1,8 @@
 # 🚀 Kubeletto Auto-Deploy Workflow
 # This file was automatically created by Kubeletto Platform.
 #
-# What it does:
-# 1. Builds your Docker image on every push
-# 2. Pushes to GitHub Container Registry (GHCR)
-# 3. Notifies Kubeletto to deploy your app
-#
-# Zero configuration needed - it just works! ✨
+# It uses a reusable workflow from Kubeletto to build and deploy your app.
+# You can customize the trigger or variables below.
 
 name: Deploy to Kubeletto
 
@@ -16,95 +12,15 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  KUBELETTO_PROJECT_ID: d2273960-23ec-4f8c-8c9a-01d4861267a7
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  build-and-deploy:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write  # Required for GHCR push
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,prefix={{branch}}-
-            type=ref,event=branch
-            type=ref,event=pr
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            COMMIT_SHA=${{ github.sha }}
-            BUILD_ID=${{ github.run_id }}
-
-      - name: Notify Kubeletto Platform
-        env:
-          IMAGE_TAG: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ github.sha }}
-          KUBELETTO_API_URL: https://api-staging.kubeletto.com
-        run: |
-          echo "Notifying Kubeletto Platform of build completion..."
-
-          curl -X POST "${KUBELETTO_API_URL}/v1/builds/complete" \
-            -H "Authorization: Bearer ${{ secrets.KUBELETTO_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d @- <<EOF
-          {
-            "project_id": "${KUBELETTO_PROJECT_ID}",
-            "commit_sha": "${{ github.sha }}",
-            "image_tag": "${IMAGE_TAG}",
-            "git_ref": "${{ github.ref_name }}",
-            "build_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-            "success": true
-          }
-          EOF
-
-          echo "✅ Build complete! View deployment: https://console.kubeletto.com/projects/${KUBELETTO_PROJECT_ID}"
-
-      - name: Handle build failure
-        if: failure()
-        env:
-          KUBELETTO_API_URL: https://api-staging.kubeletto.com
-        run: |
-          echo "Build failed, notifying Kubeletto Platform..."
-
-          curl -X POST "${KUBELETTO_API_URL}/v1/builds/complete" \
-            -H "Authorization: Bearer ${{ secrets.KUBELETTO_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d @- <<EOF
-          {
-            "project_id": "${KUBELETTO_PROJECT_ID}",
-            "commit_sha": "${{ github.sha }}",
-            "git_ref": "${{ github.ref_name }}",
-            "build_url": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
-            "success": false,
-            "error": "Build failed - check GitHub Actions logs"
-          }
-          EOF
+  deploy:
+    uses: Pod-Pilot/kubeletto-actions/.github/workflows/reusable-deploy.yml@v1
+    with:
+      project_id: ${{ vars.KUBELETTO_PROJECT_ID }}
+      api_url: https://api-staging.kubeletto.com
+    secrets:
+      api_key: ${{ secrets.KUBELETTO_API_KEY }}
