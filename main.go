@@ -33,9 +33,9 @@ func main() {
 
 	appName := os.Getenv("APP_NAME")
 
-	fmt.Println("Current Version: ", appName)
+	fmt.Println("[LOG] Current Version: ", appName)
 
-	fmt.Printf("Server started on port %s\n", port)
+	fmt.Printf("[LOG] Server started on port %s\n", port)
 	http.ListenAndServe(":"+port, nil)
 }
 
